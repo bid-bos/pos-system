@@ -69,6 +69,24 @@ const createTransaction = async (req, res) => {
       return transaction;
     });
 
+    // Emit event realtime ke semua client yang terhubung
+    const io = req.app.get('io');
+    if (io) {
+      // Kirim data produk yang stoknya berubah
+      const updatedProducts = await prisma.product.findMany({
+        include: { category: { select: { name: true } } }
+      });
+      io.emit('stock:updated', updatedProducts);
+
+      // Kirim notifikasi transaksi baru
+      io.emit('transaction:new', {
+        id: result.id,
+        totalPrice: result.totalPrice,
+        paymentMethod: result.paymentMethod,
+        itemCount: result.items.length
+      });
+    }
+
     res.status(201).json({
       message: 'Transaksi berhasil diproses',
       transaction: result

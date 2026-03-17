@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 
 interface Category { id: number; name: string; }
 interface Product {
@@ -24,11 +25,20 @@ export default function ProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', price: '', stock: '', categoryId: '', barcode: '' });
+  const { socket } = useSocket();
 
   const fetchProducts = async () => { try { const res = await api.get('/products'); setProducts(res.data); } catch { toast.error('Gagal memuat produk'); } finally { setLoading(false); } };
   const fetchCategories = async () => { try { const res = await api.get('/categories'); setCategories(res.data); } catch { /* silent */ } };
 
   useEffect(() => { fetchProducts(); fetchCategories(); }, []);
+
+  // Realtime: listen for stock updates
+  useEffect(() => {
+    if (!socket) return;
+    const handleStockUpdate = (updatedProducts: Product[]) => setProducts(updatedProducts);
+    socket.on('stock:updated', handleStockUpdate);
+    return () => { socket.off('stock:updated', handleStockUpdate); };
+  }, [socket]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

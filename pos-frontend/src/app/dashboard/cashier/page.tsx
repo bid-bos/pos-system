@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlineMinus, HiOutlineTrash, HiOutlineShoppingCart } from 'react-icons/hi';
+import { useSocket } from '@/context/SocketContext';
 
 interface Product {
   id: number; name: string; price: number; stock: number; category: { name: string };
@@ -23,10 +24,28 @@ export default function CashierPage() {
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [processing, setProcessing] = useState(false);
+  const { socket } = useSocket();
 
   useEffect(() => {
     api.get('/products').then((res) => setProducts(res.data)).catch(() => toast.error('Gagal memuat produk'));
   }, []);
+
+  // Realtime: listen for stock updates from other cashiers
+  useEffect(() => {
+    if (!socket) return;
+    const handleStockUpdate = (updatedProducts: Product[]) => {
+      setProducts(updatedProducts);
+    };
+    const handleNewTransaction = (data: { id: number; totalPrice: number; itemCount: number }) => {
+      toast(`Transaksi #${data.id} baru diproses (${data.itemCount} item)`, { icon: '🔔' });
+    };
+    socket.on('stock:updated', handleStockUpdate);
+    socket.on('transaction:new', handleNewTransaction);
+    return () => {
+      socket.off('stock:updated', handleStockUpdate);
+      socket.off('transaction:new', handleNewTransaction);
+    };
+  }, [socket]);
 
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) && p.stock > 0);
 
