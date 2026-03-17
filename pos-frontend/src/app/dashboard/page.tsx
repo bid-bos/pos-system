@@ -19,60 +19,58 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/dashboard/stats').then((res) => {
-      setStats(res.data);
-    }).catch(console.error).finally(() => setLoading(false));
+    api.get('/dashboard/stats').then((res) => setStats(res.data)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 rounded-full animate-spin" style={{ border: '3px solid var(--border)', borderTopColor: 'var(--accent)' }} />
       </div>
     );
   }
 
   const cards = [
-    { title: 'Penjualan Hari Ini', value: formatCurrency(stats?.today.revenue || 0), sub: `${stats?.today.transactionsCount || 0} transaksi`, icon: HiOutlineCurrencyDollar, gradient: 'from-indigo-600 to-indigo-400' },
-    { title: 'Total Penjualan', value: formatCurrency(stats?.allTime.revenue || 0), sub: `${stats?.allTime.transactionsCount || 0} transaksi`, icon: HiOutlineShoppingCart, gradient: 'from-cyan-600 to-cyan-400' },
-    { title: 'Stok Menipis', value: `${stats?.alerts.lowStockProducts.length || 0} produk`, sub: 'stok < 10', icon: HiOutlineExclamation, gradient: 'from-amber-600 to-amber-400' },
+    { title: 'Penjualan Hari Ini', value: formatCurrency(stats?.today.revenue || 0), sub: `${stats?.today.transactionsCount || 0} transaksi`, icon: HiOutlineCurrencyDollar, color: 'var(--accent)' },
+    { title: 'Total Penjualan', value: formatCurrency(stats?.allTime.revenue || 0), sub: `${stats?.allTime.transactionsCount || 0} transaksi`, icon: HiOutlineShoppingCart, color: 'var(--success)' },
+    { title: 'Stok Menipis', value: `${stats?.alerts.lowStockProducts.length || 0} produk`, sub: 'stok < 10', icon: HiOutlineExclamation, color: 'var(--warning)' },
   ];
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-400 mt-1">Ringkasan performa toko hari ini</p>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Ringkasan performa toko</p>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {cards.map((card) => (
-          <div key={card.title} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all">
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-lg`}>
-                <card.icon className="w-6 h-6 text-white" />
+          <div key={card.title} className="rounded-2xl p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `color-mix(in srgb, ${card.color} 15%, transparent)`, color: card.color }}>
+                <card.icon className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-sm text-slate-400 mb-1">{card.title}</h3>
-            <p className="text-2xl font-bold text-white">{card.value}</p>
-            <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
+            <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{card.title}</p>
+            <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{card.value}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{card.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Low Stock Alert */}
       {stats?.alerts.lowStockProducts && stats.alerts.lowStockProducts.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6">
-          <h3 className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
-            <HiOutlineExclamation className="w-5 h-5" />
+        <div className="rounded-2xl p-5" style={{ background: 'var(--warning-light)', border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)' }}>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--warning)' }}>
+            <HiOutlineExclamation className="w-4 h-4" />
             Peringatan Stok Menipis
           </h3>
           <div className="space-y-2">
             {stats.alerts.lowStockProducts.map((product) => (
-              <div key={product.id} className="flex justify-between items-center py-2 px-3 bg-slate-900/50 rounded-xl">
-                <span className="text-slate-300 text-sm">{product.name}</span>
-                <span className="text-amber-400 font-medium text-sm">Sisa: {product.stock}</span>
+              <div key={product.id} className="flex justify-between items-center py-2 px-3 rounded-xl" style={{ background: 'var(--bg-card)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{product.name}</span>
+                <span className="font-medium text-sm" style={{ color: 'var(--warning)' }}>Sisa: {product.stock}</span>
               </div>
             ))}
           </div>
