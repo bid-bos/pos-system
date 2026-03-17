@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-accent: #22d3ee;
+  --color-surface: #0f172a;
+  --color-surface-light: #1e293b;
+  --color-border: #334155;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Smooth transitions globally */
+* {
+  transition-property: background-color, border-color, color, opacity;
+  transition-duration: 150ms;
+}
+
+/* Input focus ring */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
