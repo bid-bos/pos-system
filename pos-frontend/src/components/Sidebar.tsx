@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { HiOutlineViewGrid, HiOutlineCube, HiOutlineTag, HiOutlineShoppingCart, HiOutlineDocumentText, HiOutlineLogout, HiOutlineSun, HiOutlineMoon } from 'react-icons/hi';
+import { HiOutlineViewGrid, HiOutlineCube, HiOutlineTag, HiOutlineShoppingCart, HiOutlineDocumentText, HiOutlineLogout, HiOutlineSun, HiOutlineMoon, HiOutlineChartBar } from 'react-icons/hi';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: HiOutlineViewGrid },
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/dashboard/categories', label: 'Kategori', icon: HiOutlineTag },
   { href: '/dashboard/cashier', label: 'Kasir', icon: HiOutlineShoppingCart },
   { href: '/dashboard/transactions', label: 'Transaksi', icon: HiOutlineDocumentText },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: HiOutlineChartBar },
 ];
 
 export default function Sidebar() {

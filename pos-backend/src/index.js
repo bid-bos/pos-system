@@ -15,6 +15,7 @@ app.use('/api/categories', require('./routes/category.routes'));
 app.use('/api/products', require('./routes/product.routes'));
 app.use('/api/transactions', require('./routes/transaction.routes'));
 app.use('/api/dashboard', require('./routes/dashboard.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'POS API is running!' });
