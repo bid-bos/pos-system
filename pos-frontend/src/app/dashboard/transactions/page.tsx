@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { HiOutlineEye } from 'react-icons/hi';
+import { HiOutlineEye, HiOutlineDocumentDownload, HiOutlineFilter } from 'react-icons/hi';
 
 interface Transaction {
   id: number; totalPrice: number; paymentMethod: string; createdAt: string; user: { name: string }; _count: { items: number };
@@ -25,23 +25,110 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<TransactionDetail | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    api.get('/transactions').then((res) => setTransactions(res.data)).catch(() => toast.error('Gagal memuat transaksi')).finally(() => setLoading(false));
+    api.get('/transactions').then((res) => {
+      setTransactions(res.data);
+      setFilteredTransactions(res.data);
+    }).catch(() => toast.error('Gagal memuat transaksi')).finally(() => setLoading(false));
   }, []);
 
   const viewDetail = async (id: number) => {
     try { const res = await api.get(`/transactions/${id}`); setDetail(res.data); } catch { toast.error('Gagal memuat detail'); }
   };
 
+  // Filter by date range
+  const applyFilter = () => {
+    if (!startDate && !endDate) {
+      setFilteredTransactions(transactions);
+      return;
+    }
+    const filtered = transactions.filter((t) => {
+      const txDate = new Date(t.createdAt);
+      if (startDate && txDate < new Date(startDate)) return false;
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (txDate > end) return false;
+      }
+      return true;
+    });
+    setFilteredTransactions(filtered);
+  };
+
+  const clearFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    setFilteredTransactions(transactions);
+  };
+
+  // Export download handler
+  const handleExport = (type: 'pdf' | 'excel') => {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/${type}?${params.toString()}`;
+
+    // Use fetch with auth header then trigger download
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (!res.ok) throw new Error('Export gagal');
+        return res.blob();
+      })
+      .then((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = type === 'pdf' ? 'laporan-transaksi.pdf' : 'laporan-transaksi.xlsx';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast.success(`Export ${type.toUpperCase()} berhasil! 📄`);
+      })
+      .catch(() => toast.error(`Gagal export ${type.toUpperCase()}`));
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 rounded-full animate-spin" style={{ border: '3px solid var(--border)', borderTopColor: 'var(--accent)' }} /></div>;
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Riwayat Transaksi</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Semua catatan penjualan</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Riwayat Transaksi</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Semua catatan penjualan</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium" style={{ background: showFilter ? 'var(--accent-light)' : 'var(--bg-card)', color: showFilter ? 'var(--accent-text)' : 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            <HiOutlineFilter className="w-4 h-4" /> Filter
+          </button>
+          <button onClick={() => handleExport('pdf')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white active:scale-[0.98]" style={{ background: '#ef4444' }}>
+            <HiOutlineDocumentDownload className="w-4 h-4" /> PDF
+          </button>
+          <button onClick={() => handleExport('excel')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white active:scale-[0.98]" style={{ background: '#10b981' }}>
+            <HiOutlineDocumentDownload className="w-4 h-4" /> Excel
+          </button>
+        </div>
       </div>
+
+      {/* Filter Panel */}
+      {showFilter && (
+        <div className="rounded-2xl p-4 mb-4 flex items-end gap-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <div className="flex-1">
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Dari Tanggal</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm" style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Sampai Tanggal</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-xl text-sm" style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+          <button onClick={applyFilter} className="px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--accent)' }}>Terapkan</button>
+          <button onClick={clearFilter} className="px-4 py-2 rounded-xl text-sm" style={{ color: 'var(--text-secondary)' }}>Reset</button>
+        </div>
+      )}
 
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <table className="w-full">
@@ -55,7 +142,7 @@ export default function TransactionsPage() {
             <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Aksi</th>
           </tr></thead>
           <tbody>
-            {transactions.map((t) => (
+            {filteredTransactions.map((t) => (
               <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}
                 onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
                 onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}>
@@ -72,7 +159,7 @@ export default function TransactionsPage() {
                 </td>
               </tr>
             ))}
-            {transactions.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Belum ada transaksi</td></tr>}
+            {filteredTransactions.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>{transactions.length === 0 ? 'Belum ada transaksi' : 'Tidak ada transaksi dalam periode ini'}</td></tr>}
           </tbody>
         </table>
       </div>
